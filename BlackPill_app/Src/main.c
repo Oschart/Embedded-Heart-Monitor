@@ -59,6 +59,12 @@ static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN 0 */
 
 /* USER CODE END 0 */
+// The three supported commands
+char SSR[] = "SSR";
+char C1MWD[] = "C1MWD";
+char RHBR[] = "RHBR";
+
+
 
 /**
   * @brief  The application entry point.
@@ -95,11 +101,11 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+	char cmd[20];
   while (1)
   {
-    /* USER CODE END WHILE */
-
-    /* USER CODE BEGIN 3 */
+		HAL_UART_Receive(&huart1, (uint8_t*)cmd, 1, HAL_MAX_DELAY);
+    HAL_UART_Transmit(&huart1, (uint8_t*)cmd, 1, HAL_MAX_DELAY);
   }
   /* USER CODE END 3 */
 }
