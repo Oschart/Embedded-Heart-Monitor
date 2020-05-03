@@ -24,5 +24,7 @@ blackpill_app\stm32f1xx_it.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_
 blackpill_app\stm32f1xx_it.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_flash.h
 blackpill_app\stm32f1xx_it.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_flash_ex.h
 blackpill_app\stm32f1xx_it.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pwr.h
+blackpill_app\stm32f1xx_it.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h
+blackpill_app\stm32f1xx_it.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h
 blackpill_app\stm32f1xx_it.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h
 blackpill_app\stm32f1xx_it.o: ../Inc/stm32f1xx_it.h

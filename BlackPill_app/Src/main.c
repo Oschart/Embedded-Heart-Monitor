@@ -41,6 +41,9 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+TIM_HandleTypeDef htim2;
+TIM_HandleTypeDef htim3;
+
 UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
@@ -51,21 +54,26 @@ UART_HandleTypeDef huart1;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART1_UART_Init(void);
-/* USER CODE BEGIN PFP */
+static void MX_TIM2_Init(void);
+static void MX_TIM3_Init(void);
 
-/* USER CODE END PFP */
 
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
 
-/* USER CODE END 0 */
 // The three supported commands
 char SSR[] = "SSR";
 char C1MWD[] = "C1MWD";
 char RHBR[] = "RHBR";
 
-
-
+// TIM2 --> ADC
+// TIM3 -->  Minute timer
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+	if(htim->Instance == TIM2) {
+		HAL_UART_Transmit(&huart1, (uint8_t*)"Fuck\r\n", sizeof "Fuck\r\n", HAL_MAX_DELAY);
+	} 
+	else if(htim->Instance == TIM3) {
+		HAL_UART_Transmit(&huart1, (uint8_t*)"Shit\r\n", sizeof "Shit\r\n", HAL_MAX_DELAY);
+	}
+}
 /**
   * @brief  The application entry point.
   * @retval int
@@ -95,17 +103,23 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART1_UART_Init();
+  MX_TIM2_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-	char cmd[20];
+	__HAL_TIM_SET_AUTORELOAD(&htim2, 500-1);
+	__HAL_TIM_SET_AUTORELOAD(&htim3, 1000-1);
+	HAL_TIM_Base_Start_IT(&htim2);
+	HAL_TIM_Base_Start_IT(&htim3);
   while (1)
   {
-		HAL_UART_Receive(&huart1, (uint8_t*)cmd, 1, HAL_MAX_DELAY);
-    HAL_UART_Transmit(&huart1, (uint8_t*)cmd, 1, HAL_MAX_DELAY);
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
 }
@@ -142,6 +156,96 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief TIM2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM2_Init(void)
+{
+
+  /* USER CODE BEGIN TIM2_Init 0 */
+
+  /* USER CODE END TIM2_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM2_Init 1 */
+
+  /* USER CODE END TIM2_Init 1 */
+  htim2.Instance = TIM2;
+  htim2.Init.Prescaler = 8000-1;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim2.Init.Period = 0;
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM2_Init 2 */
+
+  /* USER CODE END TIM2_Init 2 */
+
+}
+
+/**
+  * @brief TIM3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM3_Init(void)
+{
+
+  /* USER CODE BEGIN TIM3_Init 0 */
+
+  /* USER CODE END TIM3_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM3_Init 1 */
+
+  /* USER CODE END TIM3_Init 1 */
+  htim3.Instance = TIM3;
+  htim3.Init.Prescaler = 8000-1;
+  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim3.Init.Period = 0;
+  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM3_Init 2 */
+
+  /* USER CODE END TIM3_Init 2 */
+
 }
 
 /**
