@@ -10,3 +10,15 @@ def display_brief_guide():
     print('SSR(R): -> Sets sampling rate to R')
     return
     
+def uC_transmit(serial_p, cmd):
+    # Send command string in byte mode
+    serial_p.write(cmd.encode())
+    serial_p.flush()
+
+def uC_receive(serial_p):
+    full_res = []
+    res = serial_p.readline().decode()
+    while res != '$':
+        full_res.append(res)
+        res = serial_p.readline().decode()
+    return full_res
