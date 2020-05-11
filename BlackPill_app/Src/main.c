@@ -20,7 +20,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-
+#include <stdio.h>
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -77,11 +77,19 @@ char RHBR[] = "RHBR";
 // TIM3 -->  Minute timer
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if(htim->Instance == TIM2) {
-		HAL_UART_Transmit(&huart1, (uint8_t*)"Fuck\r\n", sizeof "Fuck\r\n", HAL_MAX_DELAY);
+		
+		HAL_ADC_Start_IT(&hadc1);
 	} 
 	else if(htim->Instance == TIM3) {
-		HAL_UART_Transmit(&huart1, (uint8_t*)"Shit\r\n", sizeof "Shit\r\n", HAL_MAX_DELAY);
+		
 	}
+}
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc1)
+{
+	uint32_t adc_value = HAL_ADC_GetValue(hadc1);
+	char out[50];
+	sprintf(out, "value = %d \r\n", adc_value);
+	HAL_UART_Transmit(&huart1, (uint8_t*)out, sizeof out, HAL_MAX_DELAY); 
 }
 /**
   * @brief  The application entry point.
