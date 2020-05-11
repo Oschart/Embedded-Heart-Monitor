@@ -70,59 +70,94 @@ static void MX_TIM3_Init(void);
 /* USER CODE BEGIN 0 */
 
 /* USER CODE END 0 */
+char cmd[50];
+void pc_get_cmd()
+{
+	memset(cmd, 0, sizeof(cmd));
+  strcpy(cmd,"");
+  char b[2];
+  do
+  {
+    HAL_UART_Receive(&huart1, (uint8_t *)b, 1, HAL_MAX_DELAY);
+    HAL_UART_Transmit(&huart1, (uint8_t *)b, strlen(b), HAL_MAX_DELAY);
+		char c = b[0];
+    strncat(cmd, &c, 1);
+  } while (*b != '$');
+}
 
+void pc_send(char data[], uint8_t size)
+{
+  HAL_UART_Transmit(&huart1, (uint8_t *)data, size, HAL_MAX_DELAY);
+}
 
+void done_ack()
+{
+  HAL_UART_Transmit(&huart1, (uint8_t *)"$\n", sizeof "$\n", HAL_MAX_DELAY);
+}
 // The three supported commands
 char SSR[] = "SSR";
 char C1MWD[] = "C1MWD";
 char RHBR[] = "RHBR";
 
 uint16_t sample_rate = 1;
+uint8_t wait_for_cmd = 1;
 
 // TIM2 --> ADC
 // TIM3 -->  Minute timer
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-	if(htim->Instance == TIM2) {
-		
-		HAL_ADC_Start_IT(&hadc1);
-	} 
-	else if(htim->Instance == TIM3) {
-		
-	}
-}
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc1)
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-	uint32_t adc_value = HAL_ADC_GetValue(hadc1);
-	char out[50];
-	sprintf(out, "value = %d \r\n", adc_value);
-	HAL_UART_Transmit(&huart1, (uint8_t*)out, sizeof out, HAL_MAX_DELAY); 
+  if (htim->Instance == TIM2)
+  {
+
+    HAL_ADC_Start_IT(&hadc1);
+  }
+  else if (htim->Instance == TIM3)
+  {
+  }
 }
-void ssr(uint16_t new_ssr) {
-	sample_rate = new_ssr;
-	__HAL_TIM_SET_AUTORELOAD(&htim2, (1000/new_ssr)-1);
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc1)
+{
+  uint32_t adc_value = HAL_ADC_GetValue(hadc1);
+  char out[50];
+  sprintf(out, "value = %d \n", adc_value);
+  HAL_UART_Transmit(&huart1, (uint8_t *)out, strlen(out), HAL_MAX_DELAY);
+}
+void ssr(uint16_t new_ssr)
+{
+  sample_rate = new_ssr;
+  __HAL_TIM_SET_AUTORELOAD(&htim2, (1000 / new_ssr) - 1);
 }
 
-uint16_t get_1st_arg(char cmd[]) {
-	while(cmd) {
-		if(*cmd == ' ') {
-			++cmd;
-			return atoi(cmd);
-		}
-		++cmd;
-	}
-	// should never reach this
-	return 0;
+uint16_t get_1st_arg(char* _cmd)
+{
+  while (_cmd)
+  {
+    if (*_cmd == ' ')
+    {
+      ++_cmd;
+			HAL_UART_Transmit(&huart1, (uint8_t *)_cmd, strlen(_cmd), HAL_MAX_DELAY);
+      return atoi(_cmd);
+    }
+    ++_cmd;
+  }
+  // should never reach this
+  return 0;
 }
-void parse_cmd(char cmd[]) {
-	if(strncmp(cmd, SSR, sizeof SSR) == 0) {
-		ssr(get_1st_arg(cmd));
-	}
-	else if(strncmp(cmd, C1MWD, sizeof C1MWD) == 0) {
-		
-	}
-	else if(strncmp(cmd, RHBR, sizeof RHBR) == 0) {
-		
-	}
+void parse_cmd()
+{
+  if (strncmp(cmd, SSR, strlen(SSR)) == 0)
+  {
+    ssr(get_1st_arg(cmd));
+    char ack_msg[] = "SSR OK!\n";
+    pc_send(ack_msg, sizeof ack_msg);
+    //HAL_UART_Transmit(&huart1, (uint8_t*)out, sizeof out, HAL_MAX_DELAY);
+  }
+  else if (strncmp(cmd, C1MWD, sizeof C1MWD) == 0)
+  {
+  }
+  else if (strncmp(cmd, RHBR, sizeof RHBR) == 0)
+  {
+  }
 }
 
 /**
@@ -150,14 +185,18 @@ int main(void)
   MX_TIM2_Init();
   MX_TIM3_Init();
 
-	
-	__HAL_TIM_SET_AUTORELOAD(&htim2, 500-1);
-	__HAL_TIM_SET_AUTORELOAD(&htim3, 1000-1);
-	HAL_TIM_Base_Start_IT(&htim2);
-	HAL_TIM_Base_Start_IT(&htim3);
+  __HAL_TIM_SET_AUTORELOAD(&htim2, 500 - 1);
+  __HAL_TIM_SET_AUTORELOAD(&htim3, 1000 - 1);
+  HAL_TIM_Base_Start_IT(&htim2);
+  HAL_TIM_Base_Start_IT(&htim3);
   while (1)
   {
-    
+    if (wait_for_cmd)
+    {
+      pc_get_cmd();
+      parse_cmd();
+			wait_for_cmd = 0;
+    }
   }
 }
 
@@ -183,8 +222,7 @@ void SystemClock_Config(void)
   }
   /** Initializes the CPU, AHB and APB busses clocks 
   */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
@@ -244,7 +282,6 @@ static void MX_ADC1_Init(void)
   /* USER CODE BEGIN ADC1_Init 2 */
 
   /* USER CODE END ADC1_Init 2 */
-
 }
 
 /**
@@ -266,7 +303,7 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 8000-1;
+  htim2.Init.Prescaler = 8000 - 1;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim2.Init.Period = 0;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -289,7 +326,6 @@ static void MX_TIM2_Init(void)
   /* USER CODE BEGIN TIM2_Init 2 */
 
   /* USER CODE END TIM2_Init 2 */
-
 }
 
 /**
@@ -311,7 +347,7 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 1 */
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 8000-1;
+  htim3.Init.Prescaler = 8000 - 1;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim3.Init.Period = 0;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -334,7 +370,6 @@ static void MX_TIM3_Init(void)
   /* USER CODE BEGIN TIM3_Init 2 */
 
   /* USER CODE END TIM3_Init 2 */
-
 }
 
 /**
@@ -367,7 +402,6 @@ static void MX_USART1_UART_Init(void)
   /* USER CODE BEGIN USART1_Init 2 */
 
   /* USER CODE END USART1_Init 2 */
-
 }
 
 /**
@@ -394,11 +428,10 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pins : Lo__Pin Lo_B9_Pin */
-  GPIO_InitStruct.Pin = Lo__Pin|Lo_B9_Pin;
+  GPIO_InitStruct.Pin = Lo__Pin | Lo_B9_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
 }
 
 /* USER CODE BEGIN 4 */
@@ -417,7 +450,7 @@ void Error_Handler(void)
   /* USER CODE END Error_Handler_Debug */
 }
 
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
   *         where the assert_param error has occurred.
@@ -426,7 +459,7 @@ void Error_Handler(void)
   * @retval None
   */
 void assert_failed(uint8_t *file, uint32_t line)
-{ 
+{
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,
      tex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
