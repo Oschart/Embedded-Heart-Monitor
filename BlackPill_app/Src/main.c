@@ -183,6 +183,15 @@ void parse_cmd()
   }
   else if (strncmp(cmd, RHBR, sizeof RHBR) == 0)
   {
+		char ack_msg[] = "RHBR OK!\n";
+    pc_send(ack_msg, sizeof ack_msg);
+		
+		char bpm[10];
+		float hrate = beat_count;
+		hrate /= min_count;
+		sprintf(bpm, "%f\n", hrate);
+		HAL_UART_Transmit(&huart1, (uint8_t *)bpm, strlen(bpm), HAL_MAX_DELAY);
+		wait_for_cmd = 1;
   }
 }
 
