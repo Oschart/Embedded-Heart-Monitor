@@ -71,6 +71,11 @@ static void MX_TIM3_Init(void);
 
 /* USER CODE END 0 */
 char cmd[50];
+uint32_t beat_count = 0;
+uint32_t min_count = 0;
+uint16_t beat_th = 620;		// Threshold for a beat
+uint8_t is_collecting_data = 0;
+uint16_t prev_reading = 0;
 void pc_get_cmd()
 {
 	memset(cmd, 0, sizeof(cmd));
@@ -111,16 +116,29 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
     HAL_ADC_Start_IT(&hadc1);
   }
-  else if (htim->Instance == TIM3)
+  else if (htim->Instance == TIM3)	// We're done collecting ECG data
   {
+		is_collecting_data = !is_collecting_data;
+		min_count++;
+		HAL_TIM_Base_Stop_IT(&htim3);
+		wait_for_cmd = 1;
+		HAL_UART_Transmit(&huart1, (uint8_t *)"C1MWD DONE!\n", strlen("C1MWD DONE!\n"), HAL_MAX_DELAY);
   }
 }
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc1)
 {
+	// Ignore ADC reading if we're not gonna send it
+	if(!is_collecting_data) return;
+	
   uint32_t adc_value = HAL_ADC_GetValue(hadc1);
-  char out[50];
-  sprintf(out, "value = %d \n", adc_value);
+	if(abs((int)(adc_value - prev_reading)) >= beat_th) {
+		++beat_count;
+		HAL_UART_Transmit(&huart1, (uint8_t *)"BEAT!\n", strlen("BEAT!\n"), HAL_MAX_DELAY);
+	}
+  char out[30];
+  sprintf(out, "%d\n", adc_value);
   HAL_UART_Transmit(&huart1, (uint8_t *)out, strlen(out), HAL_MAX_DELAY);
+	prev_reading = adc_value;
 }
 void ssr(uint16_t new_ssr)
 {
@@ -150,10 +168,18 @@ void parse_cmd()
     ssr(get_1st_arg(cmd));
     char ack_msg[] = "SSR OK!\n";
     pc_send(ack_msg, sizeof ack_msg);
+		wait_for_cmd = 1;
     //HAL_UART_Transmit(&huart1, (uint8_t*)out, sizeof out, HAL_MAX_DELAY);
   }
   else if (strncmp(cmd, C1MWD, sizeof C1MWD) == 0)
   {
+		char ack_msg[] = "C1MWD OK!\n";
+    pc_send(ack_msg, sizeof ack_msg);
+		
+		wait_for_cmd = 0;		// Don't wait for other commands until we're done
+		is_collecting_data = 1;
+		__HAL_TIM_SET_COUNTER(&htim3, 0);
+		HAL_TIM_Base_Start_IT(&htim3);	// Start the one-min timer
   }
   else if (strncmp(cmd, RHBR, sizeof RHBR) == 0)
   {
@@ -184,18 +210,20 @@ int main(void)
   MX_ADC1_Init();
   MX_TIM2_Init();
   MX_TIM3_Init();
+	
+	__HAL_TIM_CLEAR_FLAG(&htim2, TIM_SR_UIF);
+	__HAL_TIM_CLEAR_FLAG(&htim3, TIM_SR_UIF);
 
   __HAL_TIM_SET_AUTORELOAD(&htim2, 500 - 1);
-  __HAL_TIM_SET_AUTORELOAD(&htim3, 1000 - 1);
+  __HAL_TIM_SET_AUTORELOAD(&htim3, 60000 - 1);
   HAL_TIM_Base_Start_IT(&htim2);
-  HAL_TIM_Base_Start_IT(&htim3);
+  //HAL_TIM_Base_Start_IT(&htim3);
   while (1)
   {
     if (wait_for_cmd)
     {
       pc_get_cmd();
       parse_cmd();
-			wait_for_cmd = 0;
     }
   }
 }
