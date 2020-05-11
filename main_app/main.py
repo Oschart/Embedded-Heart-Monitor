@@ -1,6 +1,6 @@
 import serial
 import serial.tools.list_ports
-from app_utils import valid_input 
+from app_utils import valid_input, uC_transmit, uC_receive
 
 print('Welcome to my ECG application!')
 # Get list of available ports
@@ -14,8 +14,11 @@ sample_rate = input('Sampling rate (SPS) = ')
 serial_p = serial.Serial(port="COM6", baudrate=115200,
                   bytesize=8, timeout=2, stopbits=serial.STOPBITS_ONE)
 
-COM = input('COM port = ')
-c = input('c = ')
+while True:
+    cmd = input('>> ')
+    uC_transmit(serial_p, cmd)
+    full_res = uC_receive(serial_p)
+    print(str(full_res))
 
 
 serial_p.write(b'oscar')
