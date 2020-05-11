@@ -21,6 +21,9 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -74,6 +77,8 @@ char SSR[] = "SSR";
 char C1MWD[] = "C1MWD";
 char RHBR[] = "RHBR";
 
+uint16_t sample_rate = 1;
+
 // TIM2 --> ADC
 // TIM3 -->  Minute timer
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
@@ -91,6 +96,33 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc1)
 	char out[50];
 	sprintf(out, "value = %d \r\n", adc_value);
 	HAL_UART_Transmit(&huart1, (uint8_t*)out, sizeof out, HAL_MAX_DELAY); 
+}
+void ssr(uint16_t new_ssr) {
+	sample_rate = new_ssr;
+	__HAL_TIM_SET_AUTORELOAD(&htim2, (1000/new_ssr)-1);
+}
+
+uint16_t get_1st_arg(char cmd[]) {
+	while(cmd) {
+		if(*cmd == ' ') {
+			++cmd;
+			return atoi(cmd);
+		}
+		++cmd;
+	}
+	// should never reach this
+	return 0;
+}
+void parse_cmd(char cmd[]) {
+	if(strncmp(cmd, SSR, sizeof SSR) == 0) {
+		ssr(get_1st_arg(cmd));
+	}
+	else if(strncmp(cmd, C1MWD, sizeof C1MWD) == 0) {
+		
+	}
+	else if(strncmp(cmd, RHBR, sizeof RHBR) == 0) {
+		
+	}
 }
 
 /**
