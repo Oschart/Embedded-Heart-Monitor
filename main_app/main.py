@@ -17,15 +17,10 @@ print('Welcome to my ECG application!')
 serial_p = serial.Serial(port="COM6", baudrate=115200,
                   bytesize=8, timeout=2, stopbits=serial.STOPBITS_ONE)
 
-fig = plt.figure()
-ax = fig.add_subplot(1, 1, 1)
-xs = []
-ys = []
-ani = ''
 # This function is called periodically from FuncAnimation
 def animate(i, xs, ys):
 
-    # Read temperature (Celsius) from TMP102
+    # Read heart pulse from uC
     beat = int(uC_receive(serial_p))
 
     if beat == -1:
@@ -37,8 +32,8 @@ def animate(i, xs, ys):
     ys.append(beat)
 
     # Limit x and y lists to 20 items
-    xs = xs[-40:]
-    ys = ys[-40:]
+    xs = xs[-30:]
+    ys = ys[-30:]
 
     # Draw x and y lists
     ax.clear()
@@ -48,17 +43,19 @@ def animate(i, xs, ys):
     plt.xticks(rotation=45, ha='right')
     plt.subplots_adjust(bottom=0.30)
     plt.title('Heart Activity')
-ani = animation.FuncAnimation(fig, animate, fargs=(xs, ys), interval=200)
-ani.event_source.stop()
+
 
 while True:
     cmd = input('>> ')
     uC_transmit(serial_p, cmd)
     if cmd == "C1MWD":
-        #fig = plt.figure()
-        #ax = fig.add_subplot(1, 1, 1)
-        ani.event_source.start()
-        plt.show()       
+        fig = plt.figure()
+        ax = fig.add_subplot(1, 1, 1)
+        xs = []
+        ys = []
+        ani = animation.FuncAnimation(fig, animate, fargs=(xs, ys), interval=200)
+        plt.show()
+           
     elif cmd == "RHBR":
         hr = uC_receive(serial_p)
         print('Heart beat rate = ' + hr + ' bpm')
