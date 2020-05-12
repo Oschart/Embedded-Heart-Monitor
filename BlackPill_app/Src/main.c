@@ -73,7 +73,7 @@ char ack_msg[] = "OK\n";
 char cmd[50];
 uint32_t beat_count = 0;
 uint32_t min_count = 0;
-uint16_t beat_th = 620;		// Threshold for a beat
+uint16_t beat_th = 2480;		// Threshold for a beat
 uint8_t is_collecting_data = 0;
 uint16_t prev_reading = 0;
 void pc_get_cmd()
@@ -136,7 +136,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc1)
 	if(!is_collecting_data) return;
 	
   uint32_t adc_value = HAL_ADC_GetValue(hadc1);
-	if(abs((int)(adc_value - prev_reading)) >= beat_th) {
+	if(adc_value >= beat_th) {
 		++beat_count;
 		//HAL_UART_Transmit(&huart1, (uint8_t *)"BEAT!\n", strlen("BEAT!\n"), HAL_MAX_DELAY);
 	}

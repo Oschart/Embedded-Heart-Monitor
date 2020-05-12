@@ -27,7 +27,7 @@ def animate(i, xs, ys):
         ani.event_source.stop()
         return
     elif beat == -2:
-        beat = 512
+        beat = 2048
 
     # Add x and y to lists
     xs.append(dt.datetime.now().strftime('%S'))
@@ -40,7 +40,7 @@ def animate(i, xs, ys):
     # Draw x and y lists
     ax.clear()
     ax.plot(xs, ys, color='r')
-
+    plt.gca().set_ylim([0,4096])
     # Format plot
     plt.xticks(rotation=45, ha='right')
     plt.subplots_adjust(bottom=0.30)
