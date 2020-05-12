@@ -9,7 +9,6 @@ print('Welcome to my ECG application!')
 #com_port = valid_input('COM port = ', lambda p: p in comports_list)
 
 #baud_rate = input('Baud rate (bps) = ')
-sample_rate = input('Sampling rate (SPS) = ')
 
 serial_p = serial.Serial(port="COM6", baudrate=115200,
                   bytesize=8, timeout=2, stopbits=serial.STOPBITS_ONE)
