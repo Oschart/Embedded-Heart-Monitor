@@ -68,7 +68,7 @@ static void MX_TIM3_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+char ack_msg[] = "OK\n";
 /* USER CODE END 0 */
 char cmd[50];
 uint32_t beat_count = 0;
@@ -90,14 +90,14 @@ void pc_get_cmd()
   } while (*b != '$');
 }
 
-void pc_send(char data[], uint8_t size)
+void pc_ack_done(char data[], uint8_t size)
 {
   HAL_UART_Transmit(&huart1, (uint8_t *)data, size, HAL_MAX_DELAY);
 }
 
 void done_ack()
 {
-  HAL_UART_Transmit(&huart1, (uint8_t *)"$\n", sizeof "$\n", HAL_MAX_DELAY);
+  HAL_UART_Transmit(&huart1, (uint8_t *)ack_msg, sizeof ack_msg, HAL_MAX_DELAY);
 }
 // The three supported commands
 char SSR[] = "SSR";
@@ -122,7 +122,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		min_count++;
 		HAL_TIM_Base_Stop_IT(&htim3);
 		wait_for_cmd = 1;
-		HAL_UART_Transmit(&huart1, (uint8_t *)"C1MWD DONE!\n", strlen("C1MWD DONE!\n"), HAL_MAX_DELAY);
+		done_ack();
+		//HAL_UART_Transmit(&huart1, (uint8_t *)"C1MWD DONE!\n", strlen("C1MWD DONE!\n"), HAL_MAX_DELAY);
   }
 }
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc1)
@@ -133,7 +134,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc1)
   uint32_t adc_value = HAL_ADC_GetValue(hadc1);
 	if(abs((int)(adc_value - prev_reading)) >= beat_th) {
 		++beat_count;
-		HAL_UART_Transmit(&huart1, (uint8_t *)"BEAT!\n", strlen("BEAT!\n"), HAL_MAX_DELAY);
+		//HAL_UART_Transmit(&huart1, (uint8_t *)"BEAT!\n", strlen("BEAT!\n"), HAL_MAX_DELAY);
 	}
   char out[30];
   sprintf(out, "%d\n", adc_value);
@@ -166,16 +167,12 @@ void parse_cmd()
   if (strncmp(cmd, SSR, strlen(SSR)) == 0)
   {
     ssr(get_1st_arg(cmd));
-    char ack_msg[] = "SSR OK!\n";
-    pc_send(ack_msg, sizeof ack_msg);
 		wait_for_cmd = 1;
+		done_ack();
     //HAL_UART_Transmit(&huart1, (uint8_t*)out, sizeof out, HAL_MAX_DELAY);
   }
   else if (strncmp(cmd, C1MWD, sizeof C1MWD) == 0)
   {
-		char ack_msg[] = "C1MWD OK!\n";
-    pc_send(ack_msg, sizeof ack_msg);
-		
 		wait_for_cmd = 0;		// Don't wait for other commands until we're done
 		is_collecting_data = 1;
 		__HAL_TIM_SET_COUNTER(&htim3, 0);
@@ -183,15 +180,13 @@ void parse_cmd()
   }
   else if (strncmp(cmd, RHBR, sizeof RHBR) == 0)
   {
-		char ack_msg[] = "RHBR OK!\n";
-    pc_send(ack_msg, sizeof ack_msg);
-		
 		char bpm[10];
 		float hrate = beat_count;
 		hrate /= min_count;
 		sprintf(bpm, "%f\n", hrate);
 		HAL_UART_Transmit(&huart1, (uint8_t *)bpm, strlen(bpm), HAL_MAX_DELAY);
 		wait_for_cmd = 1;
+		done_ack();
   }
 }
 
