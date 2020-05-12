@@ -1,5 +1,9 @@
 import serial
 import serial.tools.list_ports
+import datetime as dt
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+
 from app_utils import valid_input, uC_transmit, uC_receive
 
 print('Welcome to my ECG application!')
@@ -13,19 +17,50 @@ print('Welcome to my ECG application!')
 serial_p = serial.Serial(port="COM6", baudrate=115200,
                   bytesize=8, timeout=2, stopbits=serial.STOPBITS_ONE)
 
+fig = plt.figure()
+ax = fig.add_subplot(1, 1, 1)
+xs = []
+ys = []
+ani = ''
+# This function is called periodically from FuncAnimation
+def animate(i, xs, ys):
+
+    # Read temperature (Celsius) from TMP102
+    beat = int(uC_receive(serial_p))
+
+    if beat == -1:
+        ani.event_source.stop()
+        return
+
+    # Add x and y to lists
+    xs.append(dt.datetime.now().strftime('%S'))
+    ys.append(beat)
+
+    # Limit x and y lists to 20 items
+    xs = xs[-40:]
+    ys = ys[-40:]
+
+    # Draw x and y lists
+    ax.clear()
+    ax.plot(xs, ys)
+
+    # Format plot
+    plt.xticks(rotation=45, ha='right')
+    plt.subplots_adjust(bottom=0.30)
+    plt.title('Heart Activity')
+ani = animation.FuncAnimation(fig, animate, fargs=(xs, ys), interval=200)
+ani.event_source.stop()
+
 while True:
     cmd = input('>> ')
     uC_transmit(serial_p, cmd)
-    full_res = uC_receive(serial_p)
-    print(str(full_res))
+    if cmd == "C1MWD":
+        #fig = plt.figure()
+        #ax = fig.add_subplot(1, 1, 1)
+        ani.event_source.start()
+        plt.show()       
+    elif cmd == "RHBR":
+        hr = uC_receive(serial_p)
+        print('Heart beat rate = ' + hr + ' bpm')
 
-
-serial_p.write(b'oscar')
-
-res = serial_p.read()
-print(res)
-res = serial_p.read()
-print(res)
-res = serial_p.read()
-print(res)
 
