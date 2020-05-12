@@ -21,6 +21,7 @@ def uC_receive(serial_p):
     res = serial_p.readline().decode()
     #res = res[1:]
     frst_read = True
+    print(res)
     while res[0:2] != 'OK':
         if frst_read:
             res = res[0:]

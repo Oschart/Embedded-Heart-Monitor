@@ -110,6 +110,7 @@ uint8_t wait_for_cmd = 1;
 // TIM3 -->  Minute timer
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
+	if(!is_collecting_data) return;
   if (htim->Instance == TIM2)
   {
 
@@ -119,7 +120,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   {
 		is_collecting_data = !is_collecting_data;
 		min_count++;
-		HAL_TIM_Base_Stop_IT(&htim3);
+		HAL_TIM_Base_Stop_IT(&htim2);		// Stop the sampling
+		HAL_TIM_Base_Stop_IT(&htim3);		// Stop the one-min timer
 		wait_for_cmd = 1;
 		done_ack();
 		//HAL_UART_Transmit(&huart1, (uint8_t *)"C1MWD DONE!\n", strlen("C1MWD DONE!\n"), HAL_MAX_DELAY);
@@ -173,7 +175,9 @@ void parse_cmd()
   {
 		wait_for_cmd = 0;		// Don't wait for other commands until we're done
 		is_collecting_data = 1;
+		__HAL_TIM_SET_COUNTER(&htim2, 0);
 		__HAL_TIM_SET_COUNTER(&htim3, 0);
+		HAL_TIM_Base_Start_IT(&htim2);	// Start the sampling timer
 		HAL_TIM_Base_Start_IT(&htim3);	// Start the one-min timer
   }
   else if (strncmp(cmd, RHBR, sizeof RHBR) == 0)
@@ -218,7 +222,7 @@ int main(void)
 
   __HAL_TIM_SET_AUTORELOAD(&htim2, 500 - 1);
   __HAL_TIM_SET_AUTORELOAD(&htim3, 60000 - 1);
-  HAL_TIM_Base_Start_IT(&htim2);
+  //HAL_TIM_Base_Start_IT(&htim2);
   //HAL_TIM_Base_Start_IT(&htim3);
   while (1)
   {
