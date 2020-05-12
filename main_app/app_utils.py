@@ -19,4 +19,4 @@ def uC_transmit(serial_p, cmd):
 def uC_receive(serial_p):
     res = serial_p.readline().decode()[:-1].replace('\x00', '')
     
-    return res if res[0:2] != 'OK' else -1 
+    return -2 if res[0] == '!' else -1 if res[0:2] == 'OK' else res

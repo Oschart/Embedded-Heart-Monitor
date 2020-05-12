@@ -113,8 +113,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	if(!is_collecting_data) return;
   if (htim->Instance == TIM2)
   {
-
-    HAL_ADC_Start_IT(&hadc1);
+		// Check LO- & LO+
+		if(HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_8) || HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_9)) {
+			HAL_UART_Transmit(&huart1, (uint8_t *)"!\n", strlen("!\n"), HAL_MAX_DELAY);
+		}
+		else HAL_ADC_Start_IT(&hadc1);
   }
   else if (htim->Instance == TIM3)	// We're done collecting ECG data
   {
