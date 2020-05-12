@@ -84,7 +84,6 @@ void pc_get_cmd()
   do
   {
     HAL_UART_Receive(&huart1, (uint8_t *)b, 1, HAL_MAX_DELAY);
-    HAL_UART_Transmit(&huart1, (uint8_t *)b, 1, HAL_MAX_DELAY);
 		char c = b[0];
     if(*b != '$') strncat(cmd, &c, 1);
   } while (*b != '$');
@@ -154,7 +153,6 @@ uint16_t get_1st_arg(char* _cmd)
     if (*_cmd == ' ')
     {
       ++_cmd;
-			HAL_UART_Transmit(&huart1, (uint8_t *)_cmd, strlen(_cmd), HAL_MAX_DELAY);
       return atoi(_cmd);
     }
     ++_cmd;
