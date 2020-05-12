@@ -59,7 +59,7 @@ while True:
         ax = fig.add_subplot(1, 1, 1)
         xs = []
         ys = []
-        ani = animation.FuncAnimation(fig, animate, fargs=(xs, ys), interval=200)
+        ani = animation.FuncAnimation(fig, animate, fargs=(xs, ys), interval=10)
         plt.show()
     elif cmd == "RHBR":
         hr = uC_receive(serial_p)
