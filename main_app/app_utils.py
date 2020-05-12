@@ -17,15 +17,6 @@ def uC_transmit(serial_p, cmd):
     serial_p.flush()
 
 def uC_receive(serial_p):
-    full_res = []
-    res = serial_p.readline().decode()[:-1]
-    #res = res[1:]
-    print(res)
-    while res[0:2] != 'OK':
-        # Filter escape character
-        if '\x00' in res:
-            res = res[1:]
-        full_res.append(res)
-        res = serial_p.readline().decode()[:-1]
-        print(res)
-    return full_res
+    res = serial_p.readline().decode()[:-1].replace('\x00', '')
+    
+    return res if res[0:2] != 'OK' else -1 
