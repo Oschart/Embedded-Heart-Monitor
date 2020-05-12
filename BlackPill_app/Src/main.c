@@ -168,7 +168,7 @@ void parse_cmd()
   {
     ssr(get_1st_arg(cmd));
 		wait_for_cmd = 1;
-		done_ack();
+		//done_ack();
     //HAL_UART_Transmit(&huart1, (uint8_t*)out, sizeof out, HAL_MAX_DELAY);
   }
   else if (strncmp(cmd, C1MWD, sizeof C1MWD) == 0)
@@ -188,7 +188,7 @@ void parse_cmd()
 		sprintf(bpm, "%f\n", hrate);
 		HAL_UART_Transmit(&huart1, (uint8_t *)bpm, strlen(bpm), HAL_MAX_DELAY);
 		wait_for_cmd = 1;
-		done_ack();
+		//done_ack();
   }
 }
 
