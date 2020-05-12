@@ -3,6 +3,7 @@ import serial.tools.list_ports
 import datetime as dt
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
+import matplotlib.ticker as ticker
 
 from app_utils import valid_input, uC_transmit, uC_receive
 
@@ -22,7 +23,7 @@ def animate(i, xs, ys):
 
     # Read heart pulse from uC
     beat = int(uC_receive(serial_p))
-
+    print(beat)
     if beat == -1:
         ani.event_source.stop()
         return
@@ -30,21 +31,24 @@ def animate(i, xs, ys):
         beat = 2048
 
     # Add x and y to lists
-    xs.append(dt.datetime.now().strftime('%S'))
+    xs.append(dt.datetime.now().strftime('%M:%S'))
     ys.append(beat)
 
     # Limit x and y lists to 20 items
-    xs = xs[-30:]
-    ys = ys[-30:]
+    #xs = xs[-30:]
+    #ys = ys[-30:]
 
     # Draw x and y lists
     ax.clear()
     ax.plot(xs, ys, color='r')
+    ax.xaxis.set_major_locator(ticker.MultipleLocator(10))
     plt.gca().set_ylim([0,4096])
+    plt.gca().set_xlim([0,80])
     # Format plot
     plt.xticks(rotation=45, ha='right')
     plt.subplots_adjust(bottom=0.30)
     plt.title('Heart Activity')
+    #plt.grid()
 
 
 while True:
