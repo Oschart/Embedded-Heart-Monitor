@@ -114,8 +114,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   if (htim->Instance == TIM2)
   {
 		// Check LO- & LO+
-		if(HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_8) || HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_9)) {
-			HAL_UART_Transmit(&huart1, (uint8_t *)"!\n", strlen("!\n"), HAL_MAX_DELAY);
+		if((HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_8) || 
+			HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_9))) {
+			HAL_UART_Transmit(&huart1, (uint8_t *)"!\n", 
+				strlen("!\n"), HAL_MAX_DELAY);
 		}
 		else HAL_ADC_Start_IT(&hadc1);
   }
@@ -126,8 +128,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		HAL_TIM_Base_Stop_IT(&htim2);		// Stop the sampling
 		HAL_TIM_Base_Stop_IT(&htim3);		// Stop the one-min timer
 		wait_for_cmd = 1;
-		done_ack();
-		//HAL_UART_Transmit(&huart1, (uint8_t *)"C1MWD DONE!\n", strlen("C1MWD DONE!\n"), HAL_MAX_DELAY);
+		done_ack();		// Mark end of 1-minute data
   }
 }
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc1)
@@ -138,7 +139,6 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc1)
   uint32_t adc_value = HAL_ADC_GetValue(hadc1);
 	if(adc_value >= beat_th) {
 		++beat_count;
-		//HAL_UART_Transmit(&huart1, (uint8_t *)"BEAT!\n", strlen("BEAT!\n"), HAL_MAX_DELAY);
 	}
   char out[30];
   sprintf(out, "%d\n", adc_value);
@@ -187,7 +187,7 @@ void parse_cmd()
   {
 		char bpm[10];
 		float hrate = beat_count;
-		hrate /= min_count;
+		//hrate /= min_count;
 		sprintf(bpm, "%f\n", hrate);
 		HAL_UART_Transmit(&huart1, (uint8_t *)bpm, strlen(bpm), HAL_MAX_DELAY);
 		wait_for_cmd = 1;
