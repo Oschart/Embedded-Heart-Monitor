@@ -46,7 +46,7 @@ def animate(i, xs, ys):
 
 
 while True:
-    cmd = input('>> ')
+    cmd = input('>> ').upper()
     uC_transmit(serial_p, cmd)
     if cmd == "C1MWD":
         fig = plt.figure()
@@ -55,9 +55,10 @@ while True:
         ys = []
         ani = animation.FuncAnimation(fig, animate, fargs=(xs, ys), interval=200)
         plt.show()
-           
     elif cmd == "RHBR":
         hr = uC_receive(serial_p)
         print('Heart beat rate = ' + hr + ' bpm')
+    elif cmd == "EXIT":
+        break
 
 
