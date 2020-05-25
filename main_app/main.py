@@ -8,8 +8,10 @@ import matplotlib.ticker as ticker
 from app_utils import valid_input, uC_transmit, uC_receive
 
 print('Welcome to my ECG application!')
+
 # Get list of available ports
 comports_list = list(map(lambda p: p.device, serial.tools.list_ports.comports()))
+
 print('Available COM ports: ' + str(comports_list))
 com_port = valid_input('COM port = ', lambda p: p in comports_list)
 

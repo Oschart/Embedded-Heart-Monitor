@@ -98,10 +98,11 @@ void done_ack()
 {
   HAL_UART_Transmit(&huart1, (uint8_t *)ack_msg, sizeof ack_msg, HAL_MAX_DELAY);
 }
-// The three supported commands
+// The four supported commands
 char SSR[] = "SSR";
 char C1MWD[] = "C1MWD";
 char RHBR[] = "RHBR";
+char TEAR_UP[] = "TEARUP"; // Tear up data sending session
 
 uint16_t sample_rate = 1;
 uint8_t wait_for_cmd = 1;
@@ -171,8 +172,6 @@ void parse_cmd()
   {
     ssr(get_1st_arg(cmd));
 		wait_for_cmd = 1;
-		//done_ack();
-    //HAL_UART_Transmit(&huart1, (uint8_t*)out, sizeof out, HAL_MAX_DELAY);
   }
   else if (strncmp(cmd, C1MWD, sizeof C1MWD) == 0)
   {
