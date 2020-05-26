@@ -33,12 +33,13 @@ def C1MWD():
     global ax, ani
     cmd = 'C1MWD$'
     uC_transmit(serial_p, cmd)
-    fig = plt.figure()
+    fig = plt.figure(1)
+    fig.canvas.mpl_connect('close_event', TEARUP)
     ax = fig.add_subplot(1, 1, 1)
     xs = []
     ys = []
     ani = animation.FuncAnimation(fig, animate, fargs=(xs, ys), interval=10)
-    plt.show()
+    plt.show(block=False)
 
 def RHBR():
     cmd = 'RHBR$'
@@ -48,9 +49,16 @@ def RHBR():
         hbr = '-'
     window['HBR'].update(hbr)
 
-def TEARUP():
-    cmd = 'TEARUP$'
-    uC_transmit(serial_p, cmd)
+def TEARUP(evt):
+    global ani
+    print('transmission tear-up!')
+    uC_transmit(serial_p, '#')
+    ani.event_source.stop()
+    plt.close()
+    res = uC_receive(serial_p)
+    while res != -1:
+        res = uC_receive(serial_p)
+
 
 button_actions = {
     'SSR': SSR,
@@ -60,7 +68,10 @@ button_actions = {
 
 # This function is called periodically from FuncAnimation
 def animate(i, xs, ys):
-
+    # Check if figure window is still open
+    if plt.fignum_exists(1) == False:
+        return
+    
     global ax, ani
     # Read heart pulse from uC
     beat = int(uC_receive(serial_p))

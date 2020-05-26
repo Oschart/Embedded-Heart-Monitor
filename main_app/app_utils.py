@@ -23,14 +23,13 @@ def display_brief_guide():
 
 def uC_transmit(serial_p, cmd):
     # Send command string in byte mode
-    cmd += '$'
     serial_p.write(cmd.encode())
     serial_p.flush()
 
 
 def uC_receive(serial_p):
     res = serial_p.readline().decode()[:-1].replace('\x00', '')
-
+    print('res = ', res)
     return -2 if len(res) == 0 or res[0] == '!' else -1 if res[0:2] == 'OK' else res
 
 
