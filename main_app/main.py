@@ -21,10 +21,11 @@ sg.theme('DarkAmber')  # Add a touch of color
 window = sg.Window('ECG Heart Monitor', connect_layout(comports_list),
                    size=(400, 250), element_justification='center')
 
-ani, ax = None, None
+ani, ax, values = None, None, None
 # action callbacks
 def SSR():
     X = values['srate']
+    print(X)
     cmd = 'SSR ' + X + '$'
     uC_transmit(serial_p, cmd)
 
@@ -42,6 +43,10 @@ def C1MWD():
 def RHBR():
     cmd = 'RHBR$'
     uC_transmit(serial_p, cmd)
+    hbr = uC_receive(serial_p)
+    if hbr == -2:
+        hbr = '-'
+    window['HBR'].update(hbr)
 
 def TEARUP():
     cmd = 'TEARUP$'
@@ -51,7 +56,6 @@ button_actions = {
     'SSR': SSR,
     'C1MWD': C1MWD,
     'RHBR': RHBR,
-    'TEARUP': TEARUP
 }
 
 # This function is called periodically from FuncAnimation
@@ -90,6 +94,7 @@ def animate(i, xs, ys):
 while True:
     event, values = window.read()
     print(values)
+    print(event)
     if event in (None, 'Exit'):     # if user closes window or clicks exit
         break
     if event == 'Start':  
@@ -101,7 +106,7 @@ while True:
         # Initiate control panel layout
         window.close()
         window = sg.Window('ECG Heart Monitor', control_layout(),
-                           size=(500, 400), element_justification='center')
+                           size=(500, 500), element_justification='center')
     if event in button_actions:
         button_actions[event]()
 
