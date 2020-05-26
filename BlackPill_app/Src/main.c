@@ -76,6 +76,17 @@ uint32_t min_count = 0;
 uint16_t beat_th = 2480;		// Threshold for a beat
 uint8_t is_collecting_data = 0;
 uint16_t prev_reading = 0;
+
+// The three supported commands
+char SSR[] = "SSR";
+char C1MWD[] = "C1MWD";
+char RHBR[] = "RHBR";
+
+char rec_stat[2]; // receiver status
+
+uint16_t sample_rate = 1;
+uint8_t wait_for_cmd = 1;
+
 void pc_get_cmd()
 {
 	memset(cmd, 0, sizeof(cmd));
@@ -98,14 +109,26 @@ void done_ack()
 {
   HAL_UART_Transmit(&huart1, (uint8_t *)ack_msg, sizeof ack_msg, HAL_MAX_DELAY);
 }
-// The four supported commands
-char SSR[] = "SSR";
-char C1MWD[] = "C1MWD";
-char RHBR[] = "RHBR";
-char TEAR_UP[] = "TEARUP"; // Tear up data sending session
 
-uint16_t sample_rate = 1;
-uint8_t wait_for_cmd = 1;
+
+void halt_transmission() {
+	is_collecting_data = !is_collecting_data;
+	min_count++;
+	HAL_TIM_Base_Stop_IT(&htim2);		// Stop the sampling
+	HAL_TIM_Base_Stop_IT(&htim3);		// Stop the one-min timer
+	wait_for_cmd = 1;
+	done_ack();		// Mark end of 1-minute data
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+  if (huart->Instance == USART1)
+  {
+    if(rec_stat[0] == '#') {
+			halt_transmission();
+		}
+  }
+}
 
 // TIM2 --> ADC
 // TIM3 -->  Minute timer
@@ -124,12 +147,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   }
   else if (htim->Instance == TIM3)	// We're done collecting ECG data
   {
-		is_collecting_data = !is_collecting_data;
-		min_count++;
-		HAL_TIM_Base_Stop_IT(&htim2);		// Stop the sampling
-		HAL_TIM_Base_Stop_IT(&htim3);		// Stop the one-min timer
-		wait_for_cmd = 1;
-		done_ack();		// Mark end of 1-minute data
+		halt_transmission();
   }
 }
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc1)
@@ -139,6 +157,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc1)
 	
   uint32_t adc_value = HAL_ADC_GetValue(hadc1);
 	if(adc_value >= beat_th) {
+		uint32_t curr_tim = __HAL_TIM_GET_COUNTER(&htim3);
 		++beat_count;
 	}
   char out[30];
@@ -181,6 +200,7 @@ void parse_cmd()
 		__HAL_TIM_SET_COUNTER(&htim3, 0);
 		HAL_TIM_Base_Start_IT(&htim2);	// Start the sampling timer
 		HAL_TIM_Base_Start_IT(&htim3);	// Start the one-min timer
+		HAL_UART_Receive_IT(&huart1, (uint8_t*)rec_stat, 1);
   }
   else if (strncmp(cmd, RHBR, sizeof RHBR) == 0)
   {
