@@ -141,7 +141,8 @@ formatted command is sent to the microcontroller (via UART), which gets
 parsed and the auto-reload register (ARR) of the GPTIM2 is adjusted
 according to the following formula:
 
--   ARR = $\frac{1000}{X};where\ X = desired\ sampling\ rate$
+<img src="https://render.githubusercontent.com/render/math?math=$ARR = \frac{1000}{X} where\ X = desired\ sampling\ rate$">
+
 
 Given that the GPTIM2 source clock is 8 MHz, and the prescaler is fixed
 at (8K -- 1), so the timer trigger rate becomes equivalent to the
@@ -172,7 +173,8 @@ A beat is defined as a pulse that's at least \~60% of the ADC scale in
 magnitude that follows another pulse that is below that threshold.
 Instantaneous HBR is calculated as follows:
 
-$$\mathbf{\text{HB}}\mathbf{R}_{\mathbf{\text{inst}}}\left( \mathbf{\text{bpm}} \right)\mathbf{=}\frac{\mathbf{60000}}{{\mathbf{(}\mathbf{t}_{\mathbf{\text{pulse}}}\mathbf{)}}_{\mathbf{i}}\mathbf{-}{\mathbf{(}\mathbf{t}_{\mathbf{\text{pulse}}}\mathbf{)}}_{\mathbf{i - 1}}}\mathbf{;\ \ \ \ \ }\mathbf{t}_{\mathbf{\text{pulse}}}\mathbf{\text{\ is\ in\ ms}}$$
+
+![](https://github.com/Oschart/Embedded-Heart-Monitor/blob/master/Images/eq.PNG)
 
 **The final result is the average of all instantaneous HBRs.**
 
@@ -187,7 +189,6 @@ i.  **Leads-off Detection:** this is done by digitally reading the GPIO
     microcontroller sends a special pre-set character '!' to signal the
     PC app to flatten the plot at that point.
 
-![](media/image15.png){width="5.25in" height="1.78125in"}
 
 ii. **Premature Data Collection Cancelling:** this is achieved by
     sending a pre-agreed character '\#' to the uC to signal it to stop.
