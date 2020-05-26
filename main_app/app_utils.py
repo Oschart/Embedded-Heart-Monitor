@@ -28,9 +28,9 @@ def uC_transmit(serial_p, cmd):
 
 
 def uC_receive(serial_p):
-    res = serial_p.readline().decode()[:-1].replace('\x00', '')
+    res = serial_p.readline().decode()[:-1].replace('\x00', '').replace('\x1f', '')
     print('res = ', res)
-    return -2 if len(res) == 0 or res[0] == '!' else -1 if res[0:2] == 'OK' else res
+    return -2 if len(res) == 0 or '!' in res else -1 if 'OK' in res else res
 
 
 
@@ -56,7 +56,7 @@ def control_layout():
             [sg.Text('')],
             [sg.Button('Report Heart Beat Rate', font=('Verdana', 12), key='RHBR')],
             [sg.Text('')],
-            [sg.Text('Heart Beat Rate (bpm): ', font=('Verdana', 12)), sg.Text('-', font=('Verdana', 12), key='HBR')],
+            [sg.Text('Heart Beat Rate (bpm): ', font=('Verdana', 12)), sg.Text('     -   ', font=('Verdana', 12), key='HBR')],
             [sg.Text('')],
             [sg.Button('Exit', font=('Verdana', 12))]
             ]

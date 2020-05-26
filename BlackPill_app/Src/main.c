@@ -71,9 +71,13 @@ static void MX_TIM3_Init(void);
 char ack_msg[] = "OK\n";
 /* USER CODE END 0 */
 char cmd[50];
+double rate_sum = 0.0;
 uint32_t beat_count = 0;
-uint32_t min_count = 0;
+uint32_t beat_t1 = 0, beat_t2 = 0;
+
 uint16_t beat_th = 2480;		// Threshold for a beat
+uint16_t noise_pulse_level = 3600;	
+uint8_t prev_is_sub_thresh = 1;
 uint8_t is_collecting_data = 0;
 uint16_t prev_reading = 0;
 
@@ -113,7 +117,6 @@ void done_ack()
 
 void halt_transmission() {
 	is_collecting_data = !is_collecting_data;
-	min_count++;
 	HAL_TIM_Base_Stop_IT(&htim2);		// Stop the sampling
 	HAL_TIM_Base_Stop_IT(&htim3);		// Stop the one-min timer
 	wait_for_cmd = 1;
@@ -156,9 +159,16 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc1)
 	if(!is_collecting_data) return;
 	
   uint32_t adc_value = HAL_ADC_GetValue(hadc1);
-	if(adc_value >= beat_th) {
-		uint32_t curr_tim = __HAL_TIM_GET_COUNTER(&htim3);
+	if(adc_value >= beat_th && prev_is_sub_thresh) {
+		beat_t2 = __HAL_TIM_GET_COUNTER(&htim3);
+		double new_rate = 60000.0/(beat_t2 - beat_t1);
+		rate_sum += new_rate;
 		++beat_count;
+		beat_t1 = beat_t2;
+		prev_is_sub_thresh = 0;
+	} 
+	else {
+		prev_is_sub_thresh = 1;
 	}
   char out[30];
   sprintf(out, "%d\n", adc_value);
@@ -168,7 +178,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc1)
 void ssr(uint16_t new_ssr)
 {
   sample_rate = new_ssr;
-  __HAL_TIM_SET_AUTORELOAD(&htim2, (1000 / new_ssr) - 1);
+  __HAL_TIM_SET_AUTORELOAD(&htim2, (1000/new_ssr));
 }
 
 uint16_t get_1st_arg(char* _cmd)
@@ -195,6 +205,9 @@ void parse_cmd()
   else if (strncmp(cmd, C1MWD, sizeof C1MWD) == 0)
   {
 		wait_for_cmd = 0;		// Don't wait for other commands until we're done
+		rate_sum = 0.0;
+		beat_count = 0;
+		prev_is_sub_thresh = 1;
 		is_collecting_data = 1;
 		__HAL_TIM_SET_COUNTER(&htim2, 0);
 		__HAL_TIM_SET_COUNTER(&htim3, 0);
@@ -205,7 +218,7 @@ void parse_cmd()
   else if (strncmp(cmd, RHBR, sizeof RHBR) == 0)
   {
 		char bpm[10];
-		float hrate = beat_count;
+		double hrate = rate_sum/beat_count;
 		//hrate /= min_count;
 		sprintf(bpm, "%f\n", hrate);
 		HAL_UART_Transmit(&huart1, (uint8_t *)bpm, strlen(bpm), HAL_MAX_DELAY);
