@@ -57,5 +57,7 @@ def control_layout():
             [sg.Text('')],
             [sg.Button('Report Heart Beat Rate', font=('Verdana', 12), key='RHBR')],
             [sg.Text('')],
+            [sg.Text('Heart Beat Rate (bpm): ', font=('Verdana', 12)), sg.Text('-', font=('Verdana', 12), key='HBR')],
+            [sg.Text('')],
             [sg.Button('Exit', font=('Verdana', 12))]
             ]
