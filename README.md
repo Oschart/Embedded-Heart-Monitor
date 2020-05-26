@@ -1,21 +1,11 @@
-![American University Of Cairo To Participate In 7th Gulf Education
-\...](media/image1.png){width="3.591666666666667in"
-height="2.7083333333333335in"}
-
-**Embedded Systems**
-
-**Project Report**
+**Embedded ECG Heart Monitor**
 
 **Mohamed A. Abdel Hamed**
 
-**900163202**
-
 **Dr. Mohamed Shalan**
 
-**Spring 2020**
-
 **Overview & Description**
-
+---------------------------
 Presented is a real-time embedded ECG heart monitor system application.
 The embedded side is to operate on an STM32F1 microcontroller (e.g.
 Black Pill) while the desktop-side is to run on any Python3- supporting
@@ -38,9 +28,7 @@ IV. **User Guide & Sample Runs**
 
 V.  **Future Development**
 
-```{=html}
-<!-- -->
-```
+--------------------------------------------
 I.  **Development Environment & Technology**
 
 **Software**
@@ -62,19 +50,13 @@ I.  **Development Environment & Technology**
 
     -   **matplotlib:** used for real-time plotting
 
-    -   **GUI:** used for graphical interface
+    -   **pySimpleGUI:** used for graphical interface
 
 **Hardware**
 
 -   **Microcontroller:** STM32F1 Black Pill
 
 -   **ECG Sensor:** SparkFun AD8232
-
--   ![](media/image2.png){width="2.28125in"
-    height="1.7291666666666667in"}![](media/image3.jpeg){width="1.69375in"
-    height="1.9715277777777778in"}![](media/image4.jpeg){width="2.101923665791776in"
-    height="1.4012828083989501in"}**Serial Cable**: prolific USB-UART
-    cable
 
 II. **System Features**
 
@@ -111,26 +93,25 @@ II. **System Features**
     desktop app signals the microcontroller to halt the data
     transmission from its side.
 
-```{=html}
-<!-- -->
-```
+----------------------------------------------
 III. **Design & Implementation**
-
+-------------------------------------------
 **Low-level utilities:**
 
-I.  **Command Extraction:** all commands read from the serial port byte
-    by byte, and are delimited by '\$' as shown below:
+I.  **Command Extraction:**
 
-![](media/image5.png){width="4.475in" height="0.9952887139107611in"}
+> all commands read from the serial port byte by byte, and are delimited
+> by '\$' as shown below. Note that all commands are received in
+> blocking mode due to the synchronous flow of the app. The only
+> exception to this is the premature tear-up signal which is received in
+> interrupt mode.
 
-![](media/image6.png){width="4.4in" height="2.090177165354331in"}
 
-II. **Command Parsing:** once a command has been extracted, it is then
-    passed for parsing it by its predefined handle (e.g. SSR), and then
-    the corresponding procedure is selected based on that:
+II. **Command Parsing:**
 
-![](media/image7.png){width="4.730435258092738in"
-height="2.794828302712161in"}
+> once a command has been extracted, it is then passed for parsing it by
+> its predefined handle (e.g. SSR), and then the corresponding procedure
+> is selected based on that.
 
 **In the following two sub-section, the implementation of each of the
 aforementioned System Features are to be discussed.**
@@ -140,9 +121,7 @@ aforementioned System Features are to be discussed.**
 i.  **Serial Port Selection:**
 
 This is readily achieved through the pySerial utility tools as shown
-below:
-
-![](media/image8.png){width="6.5in" height="0.4736111111111111in"}
+below.
 
 Note that it takes some time initially to detect the available ports
 (\~5 seconds)
@@ -151,22 +130,18 @@ ii. **Baud Rate Control:**
 
 > This is specified when the serial port is opened initially:
 
-![](media/image9.png){width="6.5in" height="0.5159722222222223in"}
-
 iii. **Sampling Rate Control:**
 
 Sampling rate controlled through the period of GPTIM2 which triggers the
 ADC1 conversions with each elapsed period when uC is in data collection
 mode.
 
-![](media/image10.png){width="6.5in" height="3.027083333333333in"}
-
 When a user sets the heart beat rate through the control panel, a
 formatted command is sent to the microcontroller (via UART), which gets
 parsed and the auto-reload register (ARR) of the GPTIM2 is adjusted
 according to the following formula:
 
--   ARR = $\frac{1000}{X} - 1;where\ X = desired\ sampling\ rate$
+-   ARR = $\frac{1000}{X};where\ X = desired\ sampling\ rate$
 
 Given that the GPTIM2 source clock is 8 MHz, and the prescaler is fixed
 at (8K -- 1), so the timer trigger rate becomes equivalent to the
@@ -180,20 +155,12 @@ waiting for new commands and keeps sending numerical data representing
 the pulse magnitude relative to the ADC range (12 bits = 0 to 4095).
 Every data reading is sent in a new line as shown:
 
-![](media/image11.png){width="6.5in" height="0.47152777777777777in"}
-
 When the uC is done sending data, it sends a pre-set ACK msg to signal
 the desktop app to stop updating the plot.
 
-![](media/image12.png){width="2.5833333333333335in"
-height="0.3020833333333333in"}
-
-![](media/image13.png){width="6.5in" height="0.7909722222222222in"}
 
 The real-time plot update is done by periodically redrawing the plot to
 reflect any new changes. In this app, the plot is refreshed every 10 ms:
-
-![](media/image14.png){width="6.5in" height="0.25555555555555554in"}
 
 So that achieves a refresh rate of around 100 fps. It is advised to
 reduce that rate for devices (PCs) that cannot support that refresh
@@ -201,12 +168,17 @@ rate.
 
 v.  **Report Heart Beat Rate:**
 
-This is done by counting the beats detected during a 1-minute data
-collection. A beat is defined as a pulse that's at least \~60% of the
-ADC scale in magnitude. Due to limitations on the operation guarantees
-at the user side, the heart beats counter is reset before each data
-collection to prevent previous poorly operated (e.g. disconnected pads)
-runs from corrupting the HBR.
+A beat is defined as a pulse that's at least \~60% of the ADC scale in
+magnitude that follows another pulse that is below that threshold.
+Instantaneous HBR is calculated as follows:
+
+$$\mathbf{\text{HB}}\mathbf{R}_{\mathbf{\text{inst}}}\left( \mathbf{\text{bpm}} \right)\mathbf{=}\frac{\mathbf{60000}}{{\mathbf{(}\mathbf{t}_{\mathbf{\text{pulse}}}\mathbf{)}}_{\mathbf{i}}\mathbf{-}{\mathbf{(}\mathbf{t}_{\mathbf{\text{pulse}}}\mathbf{)}}_{\mathbf{i - 1}}}\mathbf{;\ \ \ \ \ }\mathbf{t}_{\mathbf{\text{pulse}}}\mathbf{\text{\ is\ in\ ms}}$$
+
+**The final result is the average of all instantaneous HBRs.**
+
+Due to limitations on the operation guarantees at the user side, the HBR
+average is reset before each data collection to prevent previous poorly
+operated (e.g. disconnected pads) runs from corrupting the HBR.
 
 **Non-functional Features:**
 
@@ -219,12 +191,13 @@ i.  **Leads-off Detection:** this is done by digitally reading the GPIO
 
 ii. **Premature Data Collection Cancelling:** this is achieved by
     sending a pre-agreed character '\#' to the uC to signal it to stop.
+    This character is received in **UART interrupt mode** because we
+    cannot afford to block for an interruption signal during non-stop
+    transmission.
 
-```{=html}
-<!-- -->
-```
-IV. **User Guide & Sample Runs**
-
+--------------------------------------
+IV. **User Guide**
+----------------------------------------
 This guide assumes the user has the hardware described before (along
 with a means to download the hex code to the uC) in addition to the
 required software (including the Python packages).
@@ -242,14 +215,7 @@ required software (including the Python packages).
     iv. Go to the "**main\_app**" directory and run the following
         command "**python** **main.py**"
 
-![](media/image16.jpg){width="4.686956474190726in"
-height="1.4229166666666666in"}
-
-![](media/image17.png){width="5.426972878390202in"
-height="1.86956583552056in"}
-
-**Sample Run:**
-
+---------------------------------------------
 V.  **Future Development & Improvement**
 
 The following could be a potential improvement on the presented system:
@@ -263,9 +229,9 @@ The following could be a potential improvement on the presented system:
 
 4.  Adding a layer of fault tolerance around port binding in case of
     failures to connect to UART.
-
+--------------------------------------------
 **References**
-
+---------------------------------------------
 -   **AD8232 Sensor Datasheet**
 
 -   **STM32F1 Datasheet**
